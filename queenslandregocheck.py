@@ -17,7 +17,7 @@ import win32api
 from tkinter import filedialog 
 from PIL import ImageTk, Image
 import tkinter
-
+import openpyxl
 
 
 #initialising tkinter
@@ -54,12 +54,16 @@ def regodelete(license_input):
         float_delete_count = float(delete_count)
         float_delete_count_actual = float_delete_count + 1.0
         inputbox.delete(float_delete_count_actual,"end")
+        searchinglabel = tk.Label(root, text="                           ", font= ("Calibre", 9), bg="#2c3e50", fg="white")
+        searchinglabel.place(x=75,y=440)
       return None
 
 def regoclear(license_input):
      license_plates.clear()
      inputbox.delete("1.0","end")
      outputbox.delete("1.0","end")
+     searchinglabel = tk.Label(root, text="                              ", font= ("Calibre", 9), bg="#2c3e50", fg="white")
+     searchinglabel.place(x=75,y=440)
      return None
 
 def regoload():
@@ -77,13 +81,41 @@ def openfile():
             inputbox.insert(INSERT, content + '\n')
             inputbox.update_idletasks()
             check_license_plates(license_plates)
+            print(license_plates)
 
-             
+def open_excel():
+    file_location = filedialog.askopenfilename(
+        initialdir="/", title="Select Excel file",
+        filetypes=(("Excel files", "*.xlsx"), ("all files", "*.*"))
+    )
+    if file_location:
+        workbook = openpyxl.load_workbook(file_location)
+        sheet_input = sheet_name.get()
+        sheet = workbook[sheet_input]
+        excel = []
+        col_input = int(column_name.get())
+
+        for row in sheet.iter_rows(min_col=col_input, max_col=col_input, values_only=True):
+            value = row[0]
+            excel.append(str(value))
+            inputbox.insert(INSERT, str(value) + '\n')
+            inputbox.update_idletasks()
+
+        license_plates = excel
+        check_license_plates(license_plates)
+    
+            
+def clearexcel():
+    column_name.set("1")
+    sheet_name.set("Sheet1")
 
 def cleartext():
      e1.delete(0, END)
 
 def check_license_plates(license_plates):
+    searchinglabel = tk.Label(root, text="Searching                       ", font= ("Calibre", 9), bg="#2c3e50", fg="white")
+    searchinglabel.place(x=75,y=440)
+    searchinglabel.update_idletasks()
     for plate_input in license_plates:
         start_time = time.time()
         chrome_options = Options()
@@ -119,6 +151,8 @@ def check_license_plates(license_plates):
             outputbox.insert(INSERT, output_dict['result'] + '\n')
 
         print(output_dict)
+        searchinglabel = tk.Label(root, text="Search Complete", font= ("Calibre", 9), bg="#2c3e50", fg="white")
+        searchinglabel.place(x=75,y=440)
         driver.quit()
         inputbox.update_idletasks()
         print("--- %s seconds ---" % (time.time() - start_time))
@@ -152,6 +186,26 @@ listlabel.place(x=0, y=90)
 b_browse = tk.Button(root, text="Browse", command=lambda: openfile())
 b_browse.place(x=101,y=90)
 
+excellabel = tk.Label(root, text="Add by excel: ", font= ("Calibre", 12), bg="#2c3e50", fg="white")
+excellabel.place(x=170,y=90)
+
+e_browse = tk.Button(root, text="Browse", command=lambda: [open_excel(), clearexcel()])
+e_browse.place(x=280,y=90)
+
+sheetlabel = tk.Label(root, text="Sheet name: ", font= ("Calibre", 12), bg="#2c3e50", fg="white")
+sheetlabel.place(x=340,y=90)
+
+sheet_name = tk.StringVar(root, value='Sheet1')
+sheetbox = tk.Entry(root, textvariable=sheet_name, width=10)
+sheetbox.place(x=450, y=93)
+
+columnlabel = tk.Label(root, text="Column of data: ", font= ("Calibre", 12), bg="#2c3e50", fg="white")
+columnlabel.place(x=540,y=90)
+
+column_name = tk.StringVar(root, value='1')
+columnbox = tk.Entry(root, textvariable=column_name, width=10)
+columnbox.place(x=665,y=93)
+
 inputbox = Text(root, width=10, height=18)
 inputbox.place(x=5,y=130)
 
@@ -171,6 +225,6 @@ def on_enter_pressed(event):
     cleartext()
 
 root.bind('<Return>', on_enter_pressed)
-     
+
 root.mainloop()
 
