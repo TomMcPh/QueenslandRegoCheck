@@ -12,11 +12,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import tkinter as tk
 from tkinter import *
-import keyboard
-import win32api
 from tkinter import filedialog 
-from PIL import ImageTk, Image
-import tkinter
 import openpyxl
 
 
@@ -113,9 +109,10 @@ def cleartext():
      e1.delete(0, END)
 
 def check_license_plates(license_plates):
-    searchinglabel = tk.Label(root, text="Searching                       ", font= ("Calibre", 9), bg="#2c3e50", fg="white")
-    searchinglabel.place(x=75,y=440)
+    searchinglabel = tk.Label(root, text="Searching                       ", font=("Calibre", 9), bg="#2c3e50", fg="white")
+    searchinglabel.place(x=75, y=440)
     searchinglabel.update_idletasks()
+
     for plate_input in license_plates:
         start_time = time.time()
         chrome_options = Options()
@@ -136,26 +133,33 @@ def check_license_plates(license_plates):
         output_dict = {}
 
         html = driver.page_source
-        soup = BeautifulSoup(html,features='lxml')
+        soup = BeautifulSoup(html, features='lxml')
         for tag in soup.find_all('dd'):
             qld_line_counter += 1
+            processedoutput = tag.text
+            final_output = ' '.join(line.strip() for line in processedoutput.split('\n') if line.strip())
+
             if qld_line_counter == 3:
-                processedoutput = tag.text
-                final_output = ' '.join(line.strip() for line in processedoutput.split('\n') if line.strip())
                 output_dict['result'] = final_output
-                break
+            elif qld_line_counter == 5 and "EXPIRED" in processedoutput.upper():
+                output_dict['expired'] = True
 
         if "result" not in output_dict:
             outputbox.insert(INSERT, 'This vehicle is unregistered or does not exist.' + '\n', 'unregistered')
         else:
-            outputbox.insert(INSERT, output_dict['result'] + '\n')
+            if 'expired' in output_dict:
+                outputbox.insert(INSERT, output_dict['result'] + '\n', 'unregistered')
+            else:
+                outputbox.insert(INSERT, output_dict['result'] + '\n')
+
 
         print(output_dict)
-        searchinglabel = tk.Label(root, text="Search Complete", font= ("Calibre", 9), bg="#2c3e50", fg="white")
-        searchinglabel.place(x=75,y=440)
         driver.quit()
         inputbox.update_idletasks()
         print("--- %s seconds ---" % (time.time() - start_time))
+        
+    searchinglabel = tk.Label(root, text="Search Complete", font= ("Calibre", 9), bg="#2c3e50", fg="white")
+    searchinglabel.place(x=75,y=440)
 
 title = tk.Label(root, text="QLD REGO CHECK", font=("Calibre", 16), bg="#2c3e50", fg="white")
 title.pack(side="top", pady=(5, 0))
